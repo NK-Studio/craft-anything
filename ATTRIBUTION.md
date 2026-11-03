@@ -13,6 +13,7 @@ not used for modified versions.
 |---|---|---|---|---|
 | `DMSans-Regular.ttf`, `DMSans-Medium.ttf`, `DMSans-Bold.ttf` | DM Sans 1.200 (body text, labels, headlines) | © 2014-2017 Indian Type Foundry, © 2019 Google LLC | https://github.com/googlefonts/dm-fonts (`Sans/Exports/`, commit 23aafb3) | `OFL-DMSans.txt` |
 | `JetBrainsMono-Regular.ttf` | JetBrains Mono (code views) | © 2020 The JetBrains Mono Project Authors | https://github.com/JetBrains/JetBrainsMono | `OFL-JetBrainsMono.txt` |
+| `IBMPlexSansKR-Regular.ttf`, `IBMPlexSansKR-Medium.ttf`, `IBMPlexSansKR-Bold.ttf` | IBM Plex Sans KR 1.001 (Hangul) | © 2017 IBM Corp., Reserved Font Name "Plex" | https://github.com/IBM/plex | `OFL-IBMPlexSansKR.txt` |
 | `GeistMono-Regular.ttf`, `GeistMono-Medium.ttf` | Geist Mono (labels and buttons) | © 2024 The Geist Project Authors | https://github.com/vercel/geist-font (`fonts/GeistMono/ttf/`) | `OFL-GeistMono.txt` |
 
 ## egui default fonts (`epaint_default_fonts` crate)

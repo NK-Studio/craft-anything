@@ -206,6 +206,9 @@ pub static DM_SANS_REGULAR: &[u8] = include_bytes!("../../../assets/fonts/DMSans
 pub static DM_SANS_MEDIUM: &[u8] = include_bytes!("../../../assets/fonts/DMSans-Medium.ttf");
 pub static DM_SANS_BOLD: &[u8] = include_bytes!("../../../assets/fonts/DMSans-Bold.ttf");
 pub static JETBRAINS_MONO: &[u8] = include_bytes!("../../../assets/fonts/JetBrainsMono-Regular.ttf");
+pub static IBM_PLEX_SANS_KR_REGULAR: &[u8] = include_bytes!("../../../assets/fonts/IBMPlexSansKR-Regular.ttf");
+pub static IBM_PLEX_SANS_KR_MEDIUM: &[u8] = include_bytes!("../../../assets/fonts/IBMPlexSansKR-Medium.ttf");
+pub static IBM_PLEX_SANS_KR_BOLD: &[u8] = include_bytes!("../../../assets/fonts/IBMPlexSansKR-Bold.ttf");
 
 /// A font from the optional craft-fonts build input (empty unless built with `CRAFT_FONTS_DIR`).
 pub struct CraftFont {
@@ -219,7 +222,8 @@ pub struct CraftFont {
 include!(concat!(env!("OUT_DIR"), "/craft_fonts.rs"));
 
 /// Install DM Sans (three weights: body, labels and bold for headings; it has no static
-/// SemiBold), JetBrains Mono (code), plus any craft-fonts as fallbacks.
+/// SemiBold), JetBrains Mono (code), IBM Plex Sans KR for Hangul in the matching weight, plus any
+/// craft-fonts as fallbacks.
 pub fn install_fonts(ctx: &egui::Context) {
     let mut fonts = FontDefinitions::default();
     let mut add = |name: &str, bytes: &'static [u8]| {
@@ -229,6 +233,9 @@ pub fn install_fonts(ctx: &egui::Context) {
     add("DMSans-Medium", DM_SANS_MEDIUM);
     add("DMSans-Bold", DM_SANS_BOLD);
     add("JetBrainsMono", JETBRAINS_MONO);
+    add("IBMPlexSansKR", IBM_PLEX_SANS_KR_REGULAR);
+    add("IBMPlexSansKR-Medium", IBM_PLEX_SANS_KR_MEDIUM);
+    add("IBMPlexSansKR-Bold", IBM_PLEX_SANS_KR_BOLD);
     let mut fallbacks = Vec::new();
     for f in CRAFT_FONTS {
         let name = format!("craft:{}:{}", f.family, f.style);
@@ -238,15 +245,18 @@ pub fn install_fonts(ctx: &egui::Context) {
         }
     }
     // Sans first: a mincho/serif fallback makes Japanese and Chinese UI text look like prose.
-    let fallbacks = sans_first(fallbacks);
+    // Hangul comes before them: the pan-CJK fallback has Hangul too, in another design. This face
+    // has no Han or kana, so Chinese and Japanese text still reaches its own fallback.
+    let mut fallbacks = sans_first(fallbacks);
+    fallbacks.insert(0, "IBMPlexSansKR".to_owned());
     fonts.families.entry(FontFamily::Proportional).or_default().insert(0, "DMSans".to_owned());
     fonts.families.entry(FontFamily::Monospace).or_default().insert(0, "JetBrainsMono".to_owned());
     for fam in [FontFamily::Proportional, FontFamily::Monospace] {
         fonts.families.entry(fam).or_default().extend(fallbacks.iter().cloned());
     }
     let base: Vec<String> = fonts.families.get(&FontFamily::Proportional).cloned().unwrap_or_default();
-    for (fam, primary) in [("medium", "DMSans-Medium"), ("semibold", "DMSans-Bold")] {
-        let mut stack = vec![primary.to_owned()];
+    for (fam, primary, hangul) in [("medium", "DMSans-Medium", "IBMPlexSansKR-Medium"), ("semibold", "DMSans-Bold", "IBMPlexSansKR-Bold")] {
+        let mut stack = vec![primary.to_owned(), hangul.to_owned()];
         stack.extend(base.iter().cloned());
         fonts.families.insert(FontFamily::Name(fam.into()), stack);
     }
@@ -647,6 +657,17 @@ mod tests {
         assert_eq!(fallback_rank("craft:Unknown Face:Regular"), FallbackRank::Other);
         assert_eq!(fallback_rank("craft:BIZ UDMincho:Regular"), FallbackRank::Serif);
         assert_eq!(fallback_rank("craft:BIZ UDPGothic:Regular"), FallbackRank::Local);
+    }
+
+    /// Hangul needs no optional build input: every family reaches the embedded face.
+    #[test]
+    fn hangul_shows_without_craft_fonts() {
+        let ctx = egui::Context::default();
+        install_fonts(&ctx);
+        ctx.run_ui(egui::RawInput::default(), |_| {}).textures_delta.clear();
+        for font in [FontId::proportional(14.0), FontId::monospace(14.0), medium(14.0), semibold(14.0)] {
+            assert!(ctx.fonts_mut(|f| f.has_glyphs(&font, "한국어 사용자 ㄱㅎ")), "Hangul shows as boxes in {font:?}");
+        }
     }
 
     /// Releases are built with craft-fonts (#19), and so is CI; a build without them has only
